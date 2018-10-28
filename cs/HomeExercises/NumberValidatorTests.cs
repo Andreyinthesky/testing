@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using NUnit.Framework;
@@ -8,27 +9,87 @@ namespace HomeExercises
 	public class NumberValidatorTests
 	{
 		[Test]
-		public void Test()
+		[TestCaseSource(nameof(NumberValidatorTestCases_StringValue_ShouldBeMatchRegex), Category =
+			"StringValue_ShouldBeMatchRegex")]
+		[TestCaseSource(nameof(NumberValidatorTestCases_StringValue_ShouldBeNotNullOrEmpty), Category =
+			"StringValue_ShouldBeNotNullOrEmpty")]
+		[TestCaseSource(nameof(NumberValidatorTestCases_IntAndFracPartCountSigns), Category =
+			"IntAndFracPartCountSigns")]
+		[TestCaseSource(nameof(NumberValidatorTestCases_FracPartCountSigns), Category = "FracPartCountSigns")]
+		[TestCaseSource(nameof(NumberValidatorTestCases_NumberSign), Category = "NumberSign")]
+		public bool Test(int precision, int scale, bool onlyPositive, string value)
 		{
-			Assert.Throws<ArgumentException>(() => new NumberValidator(-1, 2, true));
-			Assert.DoesNotThrow(() => new NumberValidator(1, 0, true));
-			Assert.Throws<ArgumentException>(() => new NumberValidator(-1, 2, false));
-			Assert.DoesNotThrow(() => new NumberValidator(1, 0, true));
-
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0"));
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("00.00"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("-0.00"));
-			Assert.IsTrue(new NumberValidator(17, 2, true).IsValidNumber("0.0"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("+0.00"));
-			Assert.IsTrue(new NumberValidator(4, 2, true).IsValidNumber("+1.23"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("+1.23"));
-			Assert.IsFalse(new NumberValidator(17, 2, true).IsValidNumber("0.000"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("-1.23"));
-			Assert.IsFalse(new NumberValidator(3, 2, true).IsValidNumber("a.sd"));
+			return new NumberValidator(precision, scale, onlyPositive).IsValidNumber(value);
 		}
-	}
+
+		public static IEnumerable NumberValidatorTestCases_StringValue_ShouldBeMatchRegex
+		{
+			get
+			{
+				yield return new TestCaseData(17, 2, true, "something").Returns(false);
+				yield return new TestCaseData(3, 2, true, "a.sd").Returns(false);
+				yield return new TestCaseData(3, 2, true, "0.sd").Returns(false);
+				yield return new TestCaseData(3, 2, true, "a.02").Returns(false);
+				yield return new TestCaseData(4, 2, false, "-a.02").Returns(false);
+			}
+		}
+
+		public static IEnumerable NumberValidatorTestCases_StringValue_ShouldBeNotNullOrEmpty
+		{
+			get
+			{
+				yield return new TestCaseData(17, 2, true, null).Returns(false);
+				yield return new TestCaseData(17, 2, true, string.Empty).Returns(false);
+			}
+		}
+
+		public static IEnumerable NumberValidatorTestCases_IntAndFracPartCountSigns
+		{
+			get
+			{
+				yield return new TestCaseData(17, 2, true, "0.0").Returns(true);
+				yield return new TestCaseData(17, 2, true, "0").Returns(true);
+				yield return new TestCaseData(4, 2, true, "+1.23").Returns(true);
+				yield return new TestCaseData(4, 2, true, "11.23").Returns(true);
+
+				yield return new TestCaseData(3, 2, true, "00.00").Returns(false);
+				yield return new TestCaseData(3, 2, false, "-0.00").Returns(false);
+			}
+		}
+
+		public static IEnumerable NumberValidatorTestCases_FracPartCountSigns
+		{
+			get { yield return new TestCaseData(17, 2, false, "0.000").Returns(false); }
+		}
+
+		public static IEnumerable NumberValidatorTestCases_NumberSign
+		{
+			get
+			{
+				yield return new TestCaseData(4, 2, true, "-0.00").Returns(false);
+				yield return new TestCaseData(4, 2, false, "-2").Returns(true);
+				yield return new TestCaseData(4, 2, false, "+2").Returns(true);
+				yield return new TestCaseData(4, 2, false, "2").Returns(true);
+			}
+		}
+
+		[Category("TestThrows")]
+		[TestCase(-1, 2, true, true)]
+		[TestCase(2, 2, true, true)]
+		[TestCase(1, 0, true, false)]
+		public void TestThrows(int precision, int scale, bool onlyPositive, bool doesThrow)
+		{
+			if (doesThrow)
+			{
+				Assert.That(() => new NumberValidator(precision, scale, onlyPositive),
+					Throws.TypeOf<ArgumentException>());
+			}
+			else
+			{
+				Assert.That(() => new NumberValidator(precision, scale, onlyPositive), Throws.Nothing);
+			}
+		}
+    }
 
 	public class NumberValidator
 	{
