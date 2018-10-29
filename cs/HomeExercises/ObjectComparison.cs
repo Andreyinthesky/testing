@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.Collections;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace HomeExercises
@@ -15,10 +16,10 @@ namespace HomeExercises
 			var expectedTsar = new Person("Ivan IV The Terrible", 54, 170, 70,
 				new Person("Vasili III of Russia", 28, 170, 60, null));
 
-            // Перепишите код на использование Fluent Assertions.
-			actualTsar.ShouldBeEquivalentTo(expectedTsar, options => options.Excluding(p => p.Id)
-				.Excluding(p => p.Parent));
-			actualTsar.Parent.ShouldBeEquivalentTo(expectedTsar.Parent, options => options.Excluding(p => p.Id));
+			// Перепишите код на использование Fluent Assertions.
+			actualTsar.ShouldBeEquivalentTo(expectedTsar, options => options
+				.Excluding(pi => pi.SelectedMemberPath.EndsWith("Id"))
+				.AllowingInfiniteRecursion());
         }
 
 		[Test]
