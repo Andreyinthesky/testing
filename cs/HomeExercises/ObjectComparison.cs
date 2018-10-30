@@ -18,7 +18,7 @@ namespace HomeExercises
 
 			// Перепишите код на использование Fluent Assertions.
 			actualTsar.ShouldBeEquivalentTo(expectedTsar, options => options
-				.Excluding(pi => pi.SelectedMemberPath.EndsWith("Id"))
+				.Excluding(pi => pi.SelectedMemberInfo.Name.Equals(nameof(Person.Id)))
 				.AllowingInfiniteRecursion());
         }
 
