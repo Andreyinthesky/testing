@@ -3,80 +3,124 @@ using System.Collections;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 
 namespace HomeExercises
 {
 	public class NumberValidatorTests
 	{
-		[Test]
-		[TestCase(17, 2, true, "0.000", ExpectedResult = false, TestName = "when scale value more than scale")]
-		[TestCase(3, 2, true, "00.00", ExpectedResult = false, TestName = "when length value more than precision")]
-		[TestCase(3, 2, true, "-5.5", ExpectedResult = false, TestName = "when value have minus and onlyPositive true")]
-		[TestCase(5, 3, false, "--5.5", ExpectedResult = false, TestName = "when value have more then one sign")]
-		[TestCase(3, 2, false, "5.5-", ExpectedResult = false, TestName = "when value have sign in the end")]
-		[TestCase(3, 2, false, "5.-5", ExpectedResult = false, TestName = "when value have sign after decimal point")]
-		[TestCase(5, 3, false, "5.5.5", ExpectedResult = false,
-			TestName = "when value have more then one decimal point")]
-		[TestCase(3, 2, false, "+1.23", ExpectedResult = false,
-			TestName = "when length value with plus more than precision")]
-		[TestCase(3, 2, false, "-0.00", ExpectedResult = false,
-			TestName = "when length value with minus more than precision")]
-		[TestCase(3, 2, false, "", ExpectedResult = false, TestName = "when value is empty string")]
-		[TestCase(3, 2, false, null, ExpectedResult = false, TestName = "when value is null")]
-		[TestCase(3, 2, false, "5.s", ExpectedResult = false, TestName = "when value have letters after decimal point")]
-		[TestCase(3, 2, false, "5.", ExpectedResult = false, TestName = "when value have nothing after decimal point")]
-		[TestCase(3, 2, false, ".02", ExpectedResult = false,
-			TestName = "when value have nothing before decimal point")]
-		[TestCase(17, 2, true, "something", ExpectedResult = false, TestName = "when value have letters only")]
-		[TestCase(3, 2, true, "a.02", ExpectedResult = false,
-			TestName = "when value have letters before decimal point")]
-		[TestCase(3, 2, true, "a.sd", ExpectedResult = false,
-			TestName = "when value have letters before and after decimal point")]
-		[TestCase(4, 2, false, "-a.02", ExpectedResult = false,
-			TestName = "when value with minus and have letters after decimal point")]
-		[TestCase(3, 2, false, "+", ExpectedResult = false, TestName = "when value is plus")]
-		[TestCase(3, 2, false, "-", ExpectedResult = false, TestName = "when value is minus")]
-		[TestCase(3, 2, false, ",", ExpectedResult = false, TestName = "when value is comma")]
-		[TestCase(3, 2, false, ".", ExpectedResult = false, TestName = "when value is decimal point")]
-		public bool IsValidNumber_NotValidateNumber(int precision, int scale, bool onlyPositive, string value)
+		[TestCase(3, 2, false, "", TestName = "value is empty string")]
+		[TestCase(3, 2, false, null, TestName = "value is null")]
+		public void IsValidNumber_WhenValueIsNullOrEmpty_ReturnFalse(int precision, int scale, bool onlyPositive,
+			string value)
 		{
-			return new NumberValidator(precision, scale, onlyPositive).IsValidNumber(value);
+			new NumberValidator(precision, scale, onlyPositive).IsValidNumber(value)
+				.Should()
+				.BeFalse();
 		}
 
-		[Test]
-		[TestCase(3, 2, false, "+0,0", ExpectedResult = true, TestName = "when value have plus and separated by comma")]
-		[TestCase(3, 2, false, "-0,0", ExpectedResult = true,
-			TestName = "when value have minus and separated by comma")]
-		[TestCase(3, 2, false, "0,0", ExpectedResult = true, TestName = "when value separated by comma")]
-		[TestCase(3, 2, false, "-0.0", ExpectedResult = true, TestName = "when separated by decimal point")]
-		[TestCase(17, 2, true, "0", ExpectedResult = true, TestName = "when value without scale")]
-		[TestCase(17, 2, true, "0.0", ExpectedResult = true, TestName = "when value length less than precision")]
-		[TestCase(3, 2, false, "+5.5", ExpectedResult = true, TestName = "when value have plus")]
-		[TestCase(3, 2, false, "-5.5", ExpectedResult = true, TestName = "when value have minus")]
-		public bool IsValidNumber_ValidateNumber(int precision, int scale, bool onlyPositive, string value)
+		[TestCase(17, 2, "0.000", TestName = "frac part length greater than scale")]
+		[TestCase(17, 2, "-0.000", TestName = "frac part length greater than scale with plus")]
+		[TestCase(17, 2, "+0.000", TestName = "frac part length greater than scale with minus")]
+		[TestCase(3, 2, "00.00", TestName = "value is decimal and value greater than precision")]
+		[TestCase(3, 2, "+0.00", TestName = "value is decimal and value greater than precision with plus")]
+		[TestCase(3, 2, "-0.00", TestName = "value is decimal and value greater than precision with minus")]
+		[TestCase(3, 2, "1234", TestName = "value is integer and value greater than precision")]
+		[TestCase(3, 2, "+1234", TestName = "value is integer and value greater than precision with plus")]
+		[TestCase(3, 2, "-1234", TestName = "value is integer and value greater than precision with minus")]
+		public void IsValidNumber_WhenValueHaveTooLongIntegerOrFracPart_ReturnFalse(int precision, int scale,
+			string value)
 		{
-			return new NumberValidator(precision, scale, onlyPositive).IsValidNumber(value);
+			new NumberValidator(precision, scale).IsValidNumber(value)
+				.Should()
+				.BeFalse();
 		}
 
-		[Test]
-		[TestCase(-1, 2, true, TestName = "when precision is not positive number")]
-		[TestCase(0, 2, true, TestName = "when precision is zero")]
-		[TestCase(2, 3, true, TestName = "when scale greater than precision")]
-		[TestCase(2, 2, true, TestName = "when scale equal precision")]
-		[TestCase(2, -1, true, TestName = "when scale is negative number")]
-		public void Constructor_ThrowArgumentException(int precision, int scale, bool onlyPositive)
+		[TestCase("  5.5", TestName = "value have whitespaces at start")]
+		[TestCase("5.5  ", TestName = "value have whitespaces at end")]
+		[TestCase("++5.5", TestName = "value have more than one plus")]
+		[TestCase("--5.5", TestName = "value have more than one minus")]
+		[TestCase("5.5+", TestName = "value is decimal have plus in the end")]
+		[TestCase("5.5-", TestName = "value is decimal have minus in the end")]
+		[TestCase("5+", TestName = "value is integer have plus in the end")]
+		[TestCase("5-", TestName = "value is integer have minus in the end")]
+		[TestCase("5.-5", TestName = "value have minus after decimal point")]
+		[TestCase("5.+5", TestName = "value have plus after decimal point")]
+		[TestCase("5.5.5", TestName = "value have more than one decimal point")]
+		[TestCase("5..5", TestName = "value have double decimal point")]
+		[TestCase("5;5", TestName = "value have invalid separator")]
+		[TestCase("5.", TestName = "value have nothing after decimal point")]
+		[TestCase(".02", TestName = "value have nothing before decimal point")]
+		[TestCase("5.sd", TestName = "value have letters after decimal point")]
+		[TestCase("a.02", TestName = "value have letters before decimal point")]
+		[TestCase("a.sd", TestName = "value have letters before and after decimal point")]
+		[TestCase("something", TestName = "value have letters only")]
+		[TestCase("+", TestName = "value is plus")]
+		[TestCase("-", TestName = "value is minus")]
+		[TestCase(",", TestName = "value is comma")]
+		[TestCase(".", TestName = "value is decimal point")]
+		public void IsValidNumber_WhenValueNotMatchRegex_ReturnFalse(string value)
 		{
-			Action act = () => new NumberValidator(precision, scale, onlyPositive);
-			act.ShouldThrow<ArgumentException>();
+			new NumberValidator(17, 2).IsValidNumber(value)
+				.Should()
+				.BeFalse();
 		}
 
-		[Test]
+		[TestCase(2, 0, "-1", TestName = "value is negative integer")]
+		[TestCase(3, 1, "-1.1", TestName = "value is negative decimal")]
+		public void IsValidNumber_WhenValueIsNegativeAsOnlyPositive_ReturnFalse(int precision, int scale, string value)
+		{
+			new NumberValidator(precision, scale, true).IsValidNumber(value)
+				.Should()
+				.BeFalse();
+		}
+
+		[TestCase(1, 0, "5", TestName = "value is integer")]
+		[TestCase(2, 0, "+5", TestName = "value is integer and have plus")]
+		[TestCase(2, 0, "-5", TestName = "value is integer and have minus")]
+		[TestCase(2, 1, "5.0", TestName = "value is decimal")]
+		[TestCase(3, 1, "+5.0", TestName = "value is decimal and have plus")]
+		[TestCase(3, 1, "-5.0", TestName = "value is decimal and have minus")]
+		[TestCase(2, 1, "5,0", TestName = "value is decimal with comma")]
+		[TestCase(3, 1, "+5,0", TestName = "value is decimal and have plus with comma")]
+		[TestCase(3, 1, "-5,0", TestName = "value is decimal and have minus with comma")]
+		[TestCase(2, 0, "00", TestName = "value is double zero")]
+		[TestCase(2, 0, "01", TestName = "value have zero at start")]
+		public void IsValidNumber_WhenValueIsCorrect_ReturnTrue(int precision, int scale, string value)
+		{
+			new NumberValidator(precision, scale).IsValidNumber(value)
+				.Should()
+				.BeTrue();
+		}
+
+		[TestCase(-1, 2, "precision must be a positive number", TestName = "when precision is not positive number")]
+		[TestCase(0, 2, "precision must be a positive number", TestName = "when precision is zero")]
+		[TestCase(2, 3, "precision must be a non-negative number less than precision",
+			TestName = "when scale greater than precision")]
+		[TestCase(2, 2, "precision must be a non-negative number less than precision",
+			TestName = "when scale equal precision")]
+		[TestCase(2, -1, "precision must be a non-negative number less than precision",
+			TestName = "when scale is negative number")]
+		public void Constructor_ThrowArgumentException(int precision, int scale, string exceptionMessage)
+		{
+			Action act = () => new NumberValidator(precision, scale);
+			act.ShouldThrow<ArgumentException>()
+				.WithMessage(exceptionMessage);
+		}
+
 		[TestCase(1, 0, true, TestName = "when scale is zero")]
 		[TestCase(3, 2, true, TestName = "when scale is less than precision")]
 		public void Constructor_DoesNotThrowArgumentException(int precision, int scale, bool onlyPositive)
 		{
 			Action act = () => new NumberValidator(precision, scale, onlyPositive);
 			act.ShouldNotThrow<ArgumentException>();
+		}
+
+		[Test]
+		public void Constructor_WhenDefaultConstructor_DoesNotThrowsException()
+		{
+			Action action = () => new NumberValidator(1);
+			action.ShouldNotThrow<ArgumentException>();
 		}
     }
 
@@ -95,7 +139,7 @@ namespace HomeExercises
 			if (precision <= 0)
 				throw new ArgumentException("precision must be a positive number");
 			if (scale < 0 || scale >= precision)
-				throw new ArgumentException("precision must be a non-negative number less or equal than precision");
+				throw new ArgumentException("precision must be a non-negative number less than precision");
 			numberRegex = new Regex(@"^([+-]?)(\d+)([.,](\d+))?$", RegexOptions.IgnoreCase);
 		}
 
