@@ -21,7 +21,7 @@ namespace HomeExercises
 
 		[TestCase(17, 2, "0.000", TestName = "frac part length greater than scale")]
 		[TestCase(17, 2, "+0.000", TestName = "frac part length greater than scale with plus")]
-        [TestCase(17, 2, "-0.000", TestName = "frac part length greater than scale with minus")]
+		[TestCase(17, 2, "-0.000", TestName = "frac part length greater than scale with minus")]
 		[TestCase(3, 2, "00.00", TestName = "value is decimal and value greater than precision")]
 		[TestCase(3, 2, "+0.00", TestName = "value is decimal and value greater than precision with plus")]
 		[TestCase(3, 2, "-0.00", TestName = "value is decimal and value greater than precision with minus")]
@@ -67,7 +67,7 @@ namespace HomeExercises
 		}
 
 		[TestCase(2, 0, "-0", TestName = "value is zero with minus")]
-        [TestCase(2, 0, "-1", TestName = "value is negative integer")]
+		[TestCase(2, 0, "-1", TestName = "value is negative integer")]
 		[TestCase(3, 1, "-1.1", TestName = "value is negative decimal")]
 		public void IsValidNumber_WhenValueIsNegativeAsOnlyPositive_ReturnFalse(int precision, int scale, string value)
 		{
@@ -78,18 +78,18 @@ namespace HomeExercises
 
 		[TestCase(1, 0, "0", TestName = "value is zero")]
 		[TestCase(2, 0, "+0", TestName = "value is zero with plus")]
-        [TestCase(2, 0, "+1", TestName = "value is positive integer with plus")]
+		[TestCase(2, 0, "+1", TestName = "value is positive integer with plus")]
 		[TestCase(3, 1, "+1.1", TestName = "value is positive decimal with plus")]
 		[TestCase(1, 0, "1", TestName = "value is positive integer")]
 		[TestCase(2, 1, "1.1", TestName = "value is positive decimal")]
-        public void IsValidNumber_WhenValueIsPositiveAsOnlyPositive_ReturnTrue(int precision, int scale, string value)
+		public void IsValidNumber_WhenValueIsPositiveAsOnlyPositive_ReturnTrue(int precision, int scale, string value)
 		{
 			new NumberValidator(precision, scale, true).IsValidNumber(value)
 				.Should()
 				.BeTrue();
 		}
 
-        [TestCase(1, 0, "5", TestName = "value is integer")]
+		[TestCase(1, 0, "5", TestName = "value is integer")]
 		[TestCase(2, 0, "+5", TestName = "value is integer and have plus")]
 		[TestCase(2, 0, "-5", TestName = "value is integer and have minus")]
 		[TestCase(2, 1, "5.0", TestName = "value is decimal")]
@@ -136,7 +136,7 @@ namespace HomeExercises
 			Action action = () => new NumberValidator(1);
 			action.ShouldNotThrow<ArgumentException>();
 		}
-    }
+	}
 
 	public class NumberValidator
 	{
