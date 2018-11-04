@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.Collections;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace HomeExercises
@@ -16,16 +17,10 @@ namespace HomeExercises
 				new Person("Vasili III of Russia", 28, 170, 60, null));
 
 			// Перепишите код на использование Fluent Assertions.
-			Assert.AreEqual(actualTsar.Name, expectedTsar.Name);
-			Assert.AreEqual(actualTsar.Age, expectedTsar.Age);
-			Assert.AreEqual(actualTsar.Height, expectedTsar.Height);
-			Assert.AreEqual(actualTsar.Weight, expectedTsar.Weight);
-
-			Assert.AreEqual(expectedTsar.Parent.Name, actualTsar.Parent.Name);
-			Assert.AreEqual(expectedTsar.Parent.Age, actualTsar.Parent.Age);
-			Assert.AreEqual(expectedTsar.Parent.Height, actualTsar.Parent.Height);
-			Assert.AreEqual(expectedTsar.Parent.Parent, actualTsar.Parent.Parent);
-		}
+			actualTsar.ShouldBeEquivalentTo(expectedTsar, options => options
+				.Excluding(pi => pi.SelectedMemberInfo.Name.Equals(nameof(Person.Id)))
+				.AllowingInfiniteRecursion());
+        }
 
 		[Test]
 		[Description("Альтернативное решение. Какие у него недостатки?")]
@@ -35,8 +30,11 @@ namespace HomeExercises
 			var expectedTsar = new Person("Ivan IV The Terrible", 54, 170, 70,
 				new Person("Vasili III of Russia", 28, 170, 60, null));
 
-			// Какие недостатки у такого подхода? 
-			Assert.True(AreEqual(actualTsar, expectedTsar));
+            // Какие недостатки у такого подхода?
+			// 1. Если в классе появиться множество полей, значение которых необходимо сравнить, метод разростется до огромных размеров
+			// 2. Если значение поля не удовлетворяет условию, мы не сможем узнать какое это было поле и к какому объекту оно принадлежит.
+			// 3. В теории может быть выброшен StackOverflowException из-за рекурсивной проверки
+            Assert.True(AreEqual(actualTsar, expectedTsar));
 		}
 
 		private bool AreEqual(Person actual, Person expected)
